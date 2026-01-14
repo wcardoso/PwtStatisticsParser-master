@@ -1,5 +1,16 @@
 ﻿body {}
 
+/* Centraliza e dá respiro à página inteira */
+body {
+    background-color: #ffffff;
+}
+
+.container,
+.container-fluid {
+    padding-left: 24px;
+    padding-right: 24px;
+}
+
 textarea {
     border: 1px solid #999999;
     width: 100%;
@@ -308,4 +319,35 @@ td {
 
 .comparative-small {
     font-size: 18px;
+}
+
+/* ================================
+   COMPARATIVO – VERSÃO LIMPA
+================================ */
+#comparativo-container {
+    background-image: url("https://powertuning.com.br/wp-content/uploads/2024/03/Moldura-Query1OK-2048x664.jpg");
+    background-repeat: no-repeat;
+    background-position: center top;
+    background-size: contain;
+
+    padding-top: 140px;
+    padding-left: 40px;
+    padding-right: 40px;
+    padding-bottom: 80px;
+
+    max-width: 1100px;
+    margin: 60px auto;
+}
+
+#inlineComparativeTable {
+    background: transparent;
+    width: 100%;
+}
+
+#inlineComparativeTable td,
+#inlineComparativeTable th {
+    vertical-align: middle;
+    text-align: center;
+    color: #ffffff;
+    font-weight: 700;
 }

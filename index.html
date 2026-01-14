@@ -119,50 +119,42 @@
     <p>&nbsp;</p>
     <p>&nbsp;</p>
     <!-- Comparative simple table (added inline) -->
+
     <div class="row" style="margin-top:18px;">
-        <div class="col-md-8 col-md-offset-2">
+        <div class="col-md-8 col-md-offset-2" id="comparativo-container">
+
             <div class="text-center" style="margin-bottom:8px">
                 <input id="cmp-title-input" type="text" class="form-control"
                     style="width:360px;display:inline-block;text-align:center"
                     placeholder="Nome do comparativo (opcional)">
             </div>
+
             <h3 class="text-center" id="cmpHeader">Comparativo</h3>
-            <div class="table-responsive">
-                <table class="table table-bordered text-center" id="inlineComparativeTable">
-                    <thead>
-                        <tr>
-                            <th>Indicador</th>
-                            <th>Antes (ms)</th>
-                            <th>Depois (ms)</th>
-                            <th>Melhoria (%)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Duração total</td>
-                            <td id="cmp-duration-before"></td>
-                            <td id="cmp-duration-after"></td>
-                            <td id="cmp-duration-diff"></td>
-                        </tr>
-                        <tr>
-                            <td>Tempo CPU</td>
-                            <td id="cmp-cpu-before"></td>
-                            <td id="cmp-cpu-after"></td>
-                            <td id="cmp-cpu-diff"></td>
-                        </tr>
-                        <tr>
-                            <td>Leituras Lógicas</td>
-                            <td id="cmp-logical-before"></td>
-                            <td id="cmp-logical-after"></td>
-                            <td id="cmp-logical-diff"></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+
+            <table class="table table-bordered text-center" id="inlineComparativeTable">
+                <tbody>
+                    <tr>
+                        <td id="cmp-duration-before"></td>
+                        <td id="cmp-duration-after"></td>
+                        <td id="cmp-duration-diff"></td>
+                    </tr>
+                    <tr>
+                        <td id="cmp-cpu-before"></td>
+                        <td id="cmp-cpu-after"></td>
+                        <td id="cmp-cpu-diff"></td>
+                    </tr>
+                    <tr>
+                        <td id="cmp-logical-before"></td>
+                        <td id="cmp-logical-after"></td>
+                        <td id="cmp-logical-diff"></td>
+                    </tr>
+                </tbody>
+            </table>
+
         </div>
     </div>
 
-    <div id="resultTotal"></div>
+    </div>-- <div id="resultTotal"></div>
     <div id="result"></div>
     </div>
 
