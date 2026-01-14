@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Statistics Parser - Compare</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="assets/css/style.css" rel="stylesheet">
+    <style>
+        textarea {
+            width: 100%;
+            height: 200px;
+        }
+
+        .diff-pos {
+            background: #e6ffed;
+        }
+
+        .diff-neg {
+            background: #ffecec;
+        }
+
+        .small-table {
+            font-size: 90%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Compare - Before / After</h1>
+        <div class="row">
+            <div class="col-md-6">
+                <h4>Before</h4>
+                <textarea id="inputBefore" placeholder="Cole aqui a saída STATISTICS IO antes..."></textarea>
+                <button id="parseBefore" class="btn btn-primary">Parse Before</button>
+                <div id="beforeSummary"></div>
+            </div>
+            <div class="col-md-6">
+                <h4>After</h4>
+                <textarea id="inputAfter" placeholder="Cole aqui a saída STATISTICS IO depois..."></textarea>
+                <button id="parseAfter" class="btn btn-primary">Parse After</button>
+                <div id="afterSummary"></div>
+            </div>
+        </div>
+
+        <hr />
+        <button id="compareBtn" class="btn btn-success">Compare</button>
+        <button id="clearBtn" class="btn btn-default">Clear</button>
+
+        <h3>Diff</h3>
+        <div id="tableDiff"></div>
+    </div>
+
+    <!-- Comparative framed summary (moldura image should be placed at assets/img/comparative-frame.png) -->
+    <div class="container comparative-wrap">
+        <div class="comparative-frame"
+            style="background-image: url('assets/img/comparative-frame.png'), url('assets/img/comparative-frame-2.svg');">
+            <div class="comparative-table">
+                <!-- Simple comparative table -->
+                <div class="container comparative-wrap">
+                    <h3>Comparativo</h3>
+                    <div class="table-responsive">
+                        <table class="table table-bordered text-center" id="simpleComparativeTable">
+                            <thead>
+                                <tr>
+                                    <th>Indicador</th>
+                                    <th>Antes (ms)</th>
+                                    <th>Depois (ms)</th>
+                                    <th>Melhoria (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Duração total</td>
+                                    <td id="cmp-duration-before">N/A</td>
+                                    <td id="cmp-duration-after">N/A</td>
+                                    <td id="cmp-duration-diff">N/A</td>
+                                </tr>
+                                <tr>
+                                    <td>Tempo CPU</td>
+                                    <td id="cmp-cpu-before">N/A</td>
+                                    <td id="cmp-cpu-after">N/A</td>
+                                    <td id="cmp-cpu-diff">N/A</td>
+                                </tr>
+                                <tr>
+                                    <td>Leituras Lógicas</td>
+                                    <td id="cmp-logical-before">N/A</td>
+                                    <td id="cmp-logical-after">N/A</td>
+                                    <td id="cmp-logical-diff">N/A</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <table>
+                    var beforeResult = null;
+                    var afterResult = null;
+
+                    function aggregate(result) {
+                    var map = {};
+                    if (!result || !result.tables) return map;
+                    result.tables.forEach(function (t) {
+                    t.statInfo.forEach(function (r) {
+                    if (r.nostats) return;
+                    var name = r.table || '(unknown)';
+                    if (!map[name]) map[name] = { scan: 0, logical: 0, physical: 0 };
+                    map[name].scan += r.scan || 0;
+                    map[name].logical += r.logical || 0;
+                    map[name].physical += r.physical || 0;
+                    });
+                    });
+                    return map;
+                    }
+
+                    function renderSummary(containerId, agg) {
+                    var html = '<table class="table table-condensed small-table">
+                        <thead>
+                            <tr>
+                                <th>Object</th>
+                                <th>Logical</th>
+                                <th>Scan</th>
+                                <th>Physical</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+                            Object.keys(agg).forEach(function (k) {
+                            html += '<tr>
+                                <td>' + k + '</td>
+                                <td>' + agg[k].logical + '</td>
+                                <td>' + agg[k].scan + '</td>
+                                <td>' + agg[k].physical + '</td>
+                            </tr>';
+                            });
+                            html += '</tbody>
+                    </table>';
+                    document.getElementById(containerId).innerHTML = html;
+                    }
+
+                    function compareMaps(beforeMap, afterMap) {
+                    var keys = {};
+                    Object.keys(beforeMap).forEach(function (k) { keys[k] = true });
+                    Object.keys(afterMap).forEach(function (k) { keys[k] = true });
+                    var rows = [];
+                    Object.keys(keys).forEach(function (k) {
+                    var b = beforeMap[k] || { logical: 0, scan: 0, physical: 0 };
+                    var a = afterMap[k] || { logical: 0, scan: 0, physical: 0 };
+                    rows.push({ name: k, before: b, after: a, diff: { logical: a.logical - b.logical, scan: a.scan -
+                    b.scan, physical: a.physical - b.physical } });
+                    });
+                    return rows;
+                    }
+
+                    document.getElementById('parseBefore').addEventListener('click', function () {
+                    var txt = document.getElementById('inputBefore').value;
+                    beforeResult = parseStatistics(txt);
+                    var agg = aggregate(beforeResult);
+                    renderSummary('beforeSummary', agg);
+                    alert('Before parsed (' + Object.keys(agg).length + ' objects)');
+                    });
+
+                    document.getElementById('parseAfter').addEventListener('click', function () {
+                    var txt = document.getElementById('inputAfter').value;
+                    afterResult = parseStatistics(txt);
+                    var agg = aggregate(afterResult);
+                    renderSummary('afterSummary', agg);
+                    alert('After parsed (' + Object.keys(agg).length + ' objects)');
+                    });
+
+                    document.getElementById('compareBtn').addEventListener('click', function () {
+                    if (!beforeResult) beforeResult = parseStatistics(document.getElementById('inputBefore').value);
+                    if (!afterResult) afterResult = parseStatistics(document.getElementById('inputAfter').value);
+                    var bmap = aggregate(beforeResult);
+                    var amap = aggregate(afterResult);
+                    var rows = compareMaps(bmap, amap);
+                    var html = '<table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Object</th>
+                                <th>Before Logical</th>
+                                <th>After Logical</th>
+                                <th>Diff</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+                            rows.forEach(function (r) {
+                            var cls = r.diff.logical > 0 ? 'diff-pos' : (r.diff.logical < 0 ? 'diff-neg' : '' ); html
+                                +='<tr class="' + cls + '"><td>' + r.name + '</td><td>' + r.before.logical + '</td><td>'
+                                + r.after.logical + '</td><td>' + r.diff.logical + '</td></tr>' ; }); html
+                                +='</tbody></table>' ; document.getElementById('tableDiff').innerHTML=html; });
+                                document.getElementById('clearBtn').addEventListener('click', function () {
+                                document.getElementById('inputBefore').value='' ;
+                                document.getElementById('inputAfter').value='' ;
+                                document.getElementById('beforeSummary').innerHTML='' ;
+                                document.getElementById('afterSummary').innerHTML='' ;
+                                document.getElementById('tableDiff').innerHTML='' ; beforeResult=null; afterResult=null;
+                                }); </script>
+                                <script>
+                                    // Update the comparative framed summary with simple aggregated totals.
+                                    function _sumMetrics(result) {
+                                        var totals = { duration: 0, cpu: 0, logical: 0 };
+                                        if (!result || !result.tables) return totals;
+                                        result.tables.forEach(function (t) {
+                                            if (!t.statInfo) return;
+                                            t.statInfo.forEach(function (r) {
+                                                totals.duration += (r.duration || r.totalTime || 0);
+                                                totals.cpu += (r.cpu || 0);
+                                                totals.logical += (r.logical || 0);
+                                            });
+                                        });
+                                        return totals;
+                                    }
+
+                                    function _formatNumber(v) {
+                                        if (v === 0) return '0';
+                                        return isFinite(v) ? Math.round(v * 100) / 100 : 'N/A';
+                                    }
+
+                                    function updateComparativeDisplay() {
+                                        var b = beforeResult || parseStatistics(document.getElementById('inputBefore').value);
+                                        var a = afterResult || parseStatistics(document.getElementById('inputAfter').value);
+                                        var sb = _sumMetrics(b);
+                                        var sa = _sumMetrics(a);
+
+                                        document.getElementById('cmp-duration-before').innerText = _formatNumber(sb.duration);
+                                        document.getElementById('cmp-duration-after').innerText = _formatNumber(sa.duration);
+                                        document.getElementById('cmp-cpu-before').innerText = _formatNumber(sb.cpu);
+                                        document.getElementById('cmp-cpu-after').innerText = _formatNumber(sa.cpu);
+                                        document.getElementById('cmp-logical-before').innerText = _formatNumber(sb.logical);
+                                        document.getElementById('cmp-logical-after').innerText = _formatNumber(sa.logical);
+
+                                        function pct(before, after) {
+                                            if (!before || !isFinite(before)) return 'N/A';
+                                            return ((before - after) / Math.abs(before) * 100).toFixed(1) + '%';
+                                        }
+
+                                        document.getElementById('cmp-duration-diff').innerText = pct(sb.duration, sa.duration);
+                                        document.getElementById('cmp-cpu-diff').innerText = pct(sb.cpu, sa.cpu);
+                                        document.getElementById('cmp-logical-diff').innerText = pct(sb.logical, sa.logical);
+                                    }
+
+                                    // Update whenever user clicks Compare, Parse Before/After or Clear
+                                    document.getElementById('compareBtn').addEventListener('click', updateComparativeDisplay);
+                                    document.getElementById('parseBefore').addEventListener('click', function () { setTimeout(updateComparativeDisplay, 50); });
+                                    document.getElementById('parseAfter').addEventListener('click', function () { setTimeout(updateComparativeDisplay, 50); });
+                                    document.getElementById('clearBtn').addEventListener('click', function () {
+                                        document.getElementById('cmp-duration-before').innerText = 'N/A';
+                                        document.getElementById('cmp-duration-after').innerText = 'N/A';
+                                        document.getElementById('cmp-cpu-before').innerText = 'N/A';
+                                        document.getElementById('cmp-cpu-after').innerText = 'N/A';
+                                        document.getElementById('cmp-logical-before').innerText = 'N/A';
+                                        document.getElementById('cmp-logical-after').innerText = 'N/A';
+                                        document.getElementById('cmp-duration-diff').innerText = 'N/A';
+                                        document.getElementById('cmp-cpu-diff').innerText = 'N/A';
+                                        document.getElementById('cmp-logical-diff').innerText = 'N/A';
+                                    });
+                                </script>
+</body>
+
+</html>

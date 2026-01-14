@@ -321,6 +321,50 @@ function parseText(lang) {
     document.getElementById("result").innerHTML = combined;
     document.getElementById("clearButton").innerHTML = 'Clear Results';
 
+    // --- update inline comparative table if present ---
+    try {
+        function _sumLogicalFromTables(tables) {
+            var s = 0;
+            if (!tables) return 0;
+            for (var i = 0; i < tables.length; i++) {
+                var t = tables[i];
+                if (t.statTotal && t.statTotal.logical) s += t.statTotal.logical;
+            }
+            return s;
+        }
+
+        var sb_duration = (before.executionTotal ? (parseInt(before.executionTotal.elapsed) || 0) : 0) + (before.compileTotal ? (parseInt(before.compileTotal.elapsed) || 0) : 0);
+        var sa_duration = (after.executionTotal ? (parseInt(after.executionTotal.elapsed) || 0) : 0) + (after.compileTotal ? (parseInt(after.compileTotal.elapsed) || 0) : 0);
+        var sb_cpu = (before.executionTotal ? (parseInt(before.executionTotal.cpu) || 0) : 0) + (before.compileTotal ? (parseInt(before.compileTotal.cpu) || 0) : 0);
+        var sa_cpu = (after.executionTotal ? (parseInt(after.executionTotal.cpu) || 0) : 0) + (after.compileTotal ? (parseInt(after.compileTotal.cpu) || 0) : 0);
+        var sb_logical = _sumLogicalFromTables(before.tables);
+        var sa_logical = _sumLogicalFromTables(after.tables);
+
+        function _fmt(v) {
+            if (v === 0 || v) {
+                try { return numeral(v).format('0,0'); } catch (e) { return v.toString(); }
+            }
+            return 'N/A';
+        }
+        function _pct(b, a) {
+            if (!b || !isFinite(b)) return 'N/A';
+            var p = ((b - a) / Math.abs(b) * 100);
+            return (isFinite(p) ? p.toFixed(1) + '%' : 'N/A');
+        }
+
+        if (document.getElementById('cmp-duration-before')) document.getElementById('cmp-duration-before').innerText = _fmt(sb_duration);
+        if (document.getElementById('cmp-duration-after')) document.getElementById('cmp-duration-after').innerText = _fmt(sa_duration);
+        if (document.getElementById('cmp-duration-diff')) document.getElementById('cmp-duration-diff').innerText = _pct(sb_duration, sa_duration);
+
+        if (document.getElementById('cmp-cpu-before')) document.getElementById('cmp-cpu-before').innerText = _fmt(sb_cpu);
+        if (document.getElementById('cmp-cpu-after')) document.getElementById('cmp-cpu-after').innerText = _fmt(sa_cpu);
+        if (document.getElementById('cmp-cpu-diff')) document.getElementById('cmp-cpu-diff').innerText = _pct(sb_cpu, sa_cpu);
+
+        if (document.getElementById('cmp-logical-before')) document.getElementById('cmp-logical-before').innerText = _fmt(sb_logical);
+        if (document.getElementById('cmp-logical-after')) document.getElementById('cmp-logical-after').innerText = _fmt(sa_logical);
+        if (document.getElementById('cmp-logical-diff')) document.getElementById('cmp-logical-diff').innerText = _pct(sb_logical, sa_logical);
+    } catch (e) { /* ignore if inline table not present */ }
+
     // Apply datatables to Before results (destroy previous instances to avoid duplicates)
     for (var counter = 1; counter <= before.tableCount; counter++) {
         var beforeSelector = '#before_resultTable' + counter;
@@ -590,6 +634,12 @@ function clearResult() {
         document.getElementById("exampleCheck").checked = false;
     }
     document.getElementById("clearButton").innerHTML = 'Clear Text';
+
+    // clear comparative inline table if present
+    try {
+        var ids = ['cmp-duration-before', 'cmp-duration-after', 'cmp-duration-diff', 'cmp-cpu-before', 'cmp-cpu-after', 'cmp-cpu-diff', 'cmp-logical-before', 'cmp-logical-after', 'cmp-logical-diff'];
+        ids.forEach(function (id) { var el = document.getElementById(id); if (el) el.innerText = 'N/A'; });
+    } catch (e) { }
 }
 
 function versionNumber() {
